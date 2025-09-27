@@ -1,0 +1,209 @@
+﻿<Window x:Class="TTS2.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Text to Speech Converter" Height="800" Width="1200">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="200"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Toolbar -->
+        <ToolBar Grid.Row="0" Height="40">
+            <Button Name="btnOpenFile" Click="OpenFile_Click" Padding="10,5">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="📁" Margin="0,0,5,0"/>
+                    <TextBlock Text="Open Text File"/>
+                </StackPanel>
+            </Button>
+            <Separator/>
+            <ComboBox Name="cmbTTSEngine" Width="150" SelectionChanged="TTSEngine_Changed">
+                <ComboBoxItem>Windows SAPI</ComboBoxItem>
+                <ComboBoxItem>Google Cloud TTS</ComboBoxItem>
+            </ComboBox>
+            <Button Name="btnAPIKey" Click="APIKey_Click" Padding="10,5" Visibility="Collapsed">
+                <TextBlock Text="🔑 Set API Key"/>
+            </Button>
+            <Separator/>
+            <Button Name="btnConvert" Click="Convert_Click" Padding="10,5">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="🔊" Margin="0,0,5,0"/>
+                    <TextBlock Text="Convert to Audio"/>
+                </StackPanel>
+            </Button>
+            <Button Name="btnSaveText" Click="SaveText_Click" Padding="10,5">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="💾" Margin="0,0,5,0"/>
+                    <TextBlock Text="Save Text"/>
+                </StackPanel>
+            </Button>
+        </ToolBar>
+        
+        <!-- Main Editor Area -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            
+            <!-- Text Editor -->
+            <GroupBox Grid.Column="0" Header="Text Editor" Margin="5">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    
+                    <!-- Quick Insert Toolbar -->
+                    <ToolBar Grid.Row="0" Height="35">
+                        <Button Name="btnInsertSplit" Click="InsertSplit_Click" ToolTip="Insert split tags">
+                            <TextBlock Text="&lt;split&gt;"/>
+                        </Button>
+                        <ComboBox Name="cmbVoiceTag" Width="120">
+                            <ComboBoxItem>voice=1</ComboBoxItem>
+                            <ComboBoxItem>voice=2</ComboBoxItem>
+                            <ComboBoxItem>voice=3</ComboBoxItem>
+                            <ComboBoxItem>voice=4</ComboBoxItem>
+                        </ComboBox>
+                        <Button Name="btnInsertVoice" Click="InsertVoice_Click" ToolTip="Insert voice tag">
+                            <TextBlock Text="Insert Voice"/>
+                        </Button>
+                        <Separator/>
+                        <Button Name="btnInsertSSML" Click="InsertSSML_Click" ToolTip="Insert SSML tags">
+                            <TextBlock Text="SSML"/>
+                        </Button>
+                        <ComboBox Name="cmbSSMLTags" Width="150">
+                            <ComboBoxItem>&lt;break time="1s"/&gt;</ComboBoxItem>
+                            <ComboBoxItem>&lt;emphasis&gt;&lt;/emphasis&gt;</ComboBoxItem>
+                            <ComboBoxItem>&lt;prosody rate="slow"&gt;&lt;/prosody&gt;</ComboBoxItem>
+                            <ComboBoxItem>&lt;prosody pitch="high"&gt;&lt;/prosody&gt;</ComboBoxItem>
+                            <ComboBoxItem>&lt;say-as interpret-as="date"&gt;&lt;/say-as&gt;</ComboBoxItem>
+                        </ComboBox>
+                    </ToolBar>
+                    
+                    <!-- Text Box -->
+                    <RichTextBox Name="rtbTextContent" Grid.Row="1" 
+                                VerticalScrollBarVisibility="Auto"
+                                AcceptsTab="True" 
+                                FontFamily="Consolas" 
+                                FontSize="14"/>
+                </Grid>
+            </GroupBox>
+            
+            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" />
+            
+            <!-- Voice Settings Panel -->
+            <GroupBox Grid.Column="2" Header="Voice Settings" Margin="5">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    
+                    <StackPanel Grid.Row="0" Margin="5">
+                        <Label Content="Available Voices:"/>
+                        <ComboBox Name="cmbVoices" Height="25" SelectionChanged="Voice_Changed"/>
+                        
+                        <Label Content="Speech Rate:" Margin="0,10,0,0"/>
+                        <Slider Name="sliderRate" Minimum="-10" Maximum="10" Value="0" TickFrequency="1" IsSnapToTickEnabled="True"/>
+                        <TextBlock Text="{Binding ElementName=sliderRate, Path=Value}" HorizontalAlignment="Center"/>
+                        
+                        <Label Content="Volume:" Margin="0,10,0,0"/>
+                        <Slider Name="sliderVolume" Minimum="0" Maximum="100" Value="100" TickFrequency="10" IsSnapToTickEnabled="True"/>
+                        <TextBlock Text="{Binding ElementName=sliderVolume, Path=Value}" HorizontalAlignment="Center"/>
+                        
+                        <Label Content="Output Format:" Margin="0,10,0,0"/>
+                        <ComboBox Name="cmbOutputFormat" Height="25">
+                            <ComboBoxItem>WAV</ComboBoxItem>
+                            <ComboBoxItem>MP3</ComboBoxItem>
+                        </ComboBox>
+                    </StackPanel>
+                    
+                    <!-- Test Voice Buttons -->
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="5">
+                        <Button Name="btnTestVoice" Click="TestVoice_Click" Width="80" Height="30" Margin="5">
+                            <TextBlock Text="▶ Test"/>
+                        </Button>
+                        <Button Name="btnStopTest" Click="StopTest_Click" Width="80" Height="30" Margin="5">
+                            <TextBlock Text="⏹ Stop"/>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </GroupBox>
+        </Grid>
+        
+        <!-- Output Log and Playback Controls -->
+        <Grid Grid.Row="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            
+            <!-- Playback Controls -->
+            <GroupBox Grid.Row="0" Header="Playback Controls" Margin="5" Height="80">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <!-- Play Controls -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="5">
+                        <Button Name="btnPlayPrevious" Click="PlayPrevious_Click" Width="40" Height="30" Margin="2" IsEnabled="False">
+                            <TextBlock Text="⏮"/>
+                        </Button>
+                        <Button Name="btnPlayPause" Click="PlayPause_Click" Width="60" Height="30" Margin="2" IsEnabled="False">
+                            <TextBlock Text="▶ Play"/>
+                        </Button>
+                        <Button Name="btnPlayNext" Click="PlayNext_Click" Width="40" Height="30" Margin="2" IsEnabled="False">
+                            <TextBlock Text="⏭"/>
+                        </Button>
+                        <Button Name="btnStopPlayback" Click="StopPlayback_Click" Width="50" Height="30" Margin="2" IsEnabled="False">
+                            <TextBlock Text="⏹ Stop"/>
+                        </Button>
+                    </StackPanel>
+                    
+                    <!-- Progress and File Info -->
+                    <StackPanel Grid.Column="1" Margin="10,5">
+                        <TextBlock Name="txtCurrentFile" Text="No file loaded" FontWeight="Bold"/>
+                        <ProgressBar Name="playbackProgress" Height="10" Margin="0,5"/>
+                        <TextBlock Name="txtPlaybackTime" Text="00:00 / 00:00" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                    
+                    <!-- File List -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="5">
+                        <Label Content="File:"/>
+                        <ComboBox Name="cmbCreatedFiles" Width="200" SelectionChanged="CreatedFile_Changed" IsEnabled="False"/>
+                        <Button Name="btnOpenFolder" Click="OpenFolder_Click" Width="80" Margin="5,0" IsEnabled="False">
+                            <TextBlock Text="📁 Folder"/>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </GroupBox>
+            
+            <!-- Output Log -->
+            <GroupBox Grid.Row="1" Header="Output Log" Margin="5">
+                <TextBox Name="txtLog" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" IsReadOnly="True" FontFamily="Consolas"/>
+            </GroupBox>
+        </Grid>
+        
+        <!-- Status Bar -->
+        <StatusBar Grid.Row="3">
+            <StatusBarItem>
+                <TextBlock Name="txtStatus" Text="Ready"/>
+            </StatusBarItem>
+            <Separator/>
+            <StatusBarItem>
+                <ProgressBar Name="progressBar" Width="200" Height="15" Visibility="Collapsed"/>
+            </StatusBarItem>
+        </StatusBar>
+    </Grid>
+</Window>

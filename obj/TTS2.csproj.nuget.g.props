@@ -13,4 +13,8 @@
     <SourceRoot Include="C:\Users\sodhi\.nuget\packages\" />
     <SourceRoot Include="C:\Program Files (x86)\Microsoft Visual Studio\Shared\NuGetPackages\" />
   </ItemGroup>
+  <PropertyGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
+    <PkgAWSSDK_Core Condition=" '$(PkgAWSSDK_Core)' == '' ">C:\Users\sodhi\.nuget\packages\awssdk.core\3.7.500.27</PkgAWSSDK_Core>
+    <PkgAWSSDK_Polly Condition=" '$(PkgAWSSDK_Polly)' == '' ">C:\Users\sodhi\.nuget\packages\awssdk.polly\3.7.502.16</PkgAWSSDK_Polly>
+  </PropertyGroup>
 </Project>

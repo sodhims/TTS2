@@ -8,13 +8,50 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="200"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         
+        <!-- Menu Bar -->
+        <Menu Grid.Row="0">
+            <MenuItem Header="File">
+                <MenuItem Header="Open Text File..." Click="OpenFile_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="📁"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Save Text..." Click="SaveText_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="💾"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="Exit" Click="Exit_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="❌"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+            </MenuItem>
+            <MenuItem Header="Edit">
+                <MenuItem Header="Find and Replace..." Click="FindReplace_Click" InputGestureText="Ctrl+H">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🔍"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+            </MenuItem>
+            <MenuItem Header="Help">
+                <MenuItem Header="About" Click="About_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="ℹ️"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+            </MenuItem>
+        </Menu>
+        
         <!-- Toolbar -->
-        <ToolBar Grid.Row="0" Height="40">
+        <ToolBar Grid.Row="1" Height="40">
             <Button Name="btnOpenFile" Click="OpenFile_Click" Padding="10,5">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="📁" Margin="0,0,5,0"/>
@@ -25,9 +62,17 @@
             <ComboBox Name="cmbTTSEngine" Width="150" SelectionChanged="TTSEngine_Changed">
                 <ComboBoxItem>Windows SAPI</ComboBoxItem>
                 <ComboBoxItem>Google Cloud TTS</ComboBoxItem>
+                <ComboBoxItem>AWS Polly</ComboBoxItem>
+                <ComboBoxItem>ElevenLabs</ComboBoxItem>
             </ComboBox>
             <Button Name="btnAPIKey" Click="APIKey_Click" Padding="10,5" Visibility="Collapsed">
                 <TextBlock Text="🔑 Set API Key"/>
+            </Button>
+            <Button Name="btnAWSCredentials" Click="AWSCredentials_Click" Padding="10,5" Visibility="Collapsed">
+                <TextBlock Text="🔑 AWS Credentials"/>
+            </Button>
+            <Button Name="btnElevenLabsKey" Click="ElevenLabsKey_Click" Padding="10,5" Visibility="Collapsed">
+            <TextBlock Text="🔑 ElevenLabs Key"/>
             </Button>
             <Separator/>
             <Button Name="btnConvert" Click="Convert_Click" Padding="10,5">
@@ -45,7 +90,7 @@
         </ToolBar>
         
         <!-- Main Editor Area -->
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="3*"/>
                 <ColumnDefinition Width="Auto"/>
@@ -70,6 +115,10 @@
                             <ComboBoxItem>voice=2</ComboBoxItem>
                             <ComboBoxItem>voice=3</ComboBoxItem>
                             <ComboBoxItem>voice=4</ComboBoxItem>
+                            <ComboBoxItem>service=1</ComboBoxItem>
+                            <ComboBoxItem>service=2</ComboBoxItem>
+                            <ComboBoxItem>service=3</ComboBoxItem>
+                            <ComboBoxItem>service=4</ComboBoxItem>
                         </ComboBox>
                         <Button Name="btnInsertVoice" Click="InsertVoice_Click" ToolTip="Insert voice tag">
                             <TextBlock Text="Insert Voice"/>
@@ -78,13 +127,42 @@
                         <Button Name="btnInsertSSML" Click="InsertSSML_Click" ToolTip="Insert SSML tags">
                             <TextBlock Text="SSML"/>
                         </Button>
-                        <ComboBox Name="cmbSSMLTags" Width="150">
+                        <ComboBox Name="cmbSSMLTags" Width="200">
+                            <ComboBoxItem>&lt;emphasis level="strong"&gt;&lt;/emphasis&gt;</ComboBoxItem>
+                            <ComboBoxItem>&lt;emphasis level="moderate"&gt;&lt;/emphasis&gt;</ComboBoxItem>
                             <ComboBoxItem>&lt;break time="1s"/&gt;</ComboBoxItem>
-                            <ComboBoxItem>&lt;emphasis&gt;&lt;/emphasis&gt;</ComboBoxItem>
+                            <ComboBoxItem>&lt;break time="500ms"/&gt;</ComboBoxItem>
                             <ComboBoxItem>&lt;prosody rate="slow"&gt;&lt;/prosody&gt;</ComboBoxItem>
-                            <ComboBoxItem>&lt;prosody pitch="high"&gt;&lt;/prosody&gt;</ComboBoxItem>
-                            <ComboBoxItem>&lt;say-as interpret-as="date"&gt;&lt;/say-as&gt;</ComboBoxItem>
+                            <ComboBoxItem>&lt;prosody rate="fast"&gt;&lt;/prosody&gt;</ComboBoxItem>
+                            <ComboBoxItem>&lt;prosody pitch="+5st"&gt;&lt;/prosody&gt;</ComboBoxItem>
+                            <ComboBoxItem>&lt;prosody pitch="-5st"&gt;&lt;/prosody&gt;</ComboBoxItem>
+                            <ComboBoxItem>&lt;prosody volume="loud"&gt;&lt;/prosody&gt;</ComboBoxItem>
+                            <ComboBoxItem>&lt;prosody volume="soft"&gt;&lt;/prosody&gt;</ComboBoxItem>
+                            <ComboBoxItem>&lt;say-as interpret-as="date" format="mdy"&gt;&lt;/say-as&gt;</ComboBoxItem>
+                            <ComboBoxItem>&lt;say-as interpret-as="date" format="ymd"&gt;&lt;/say-as&gt;</ComboBoxItem>
+                            <ComboBoxItem>&lt;say-as interpret-as="time" format="hms24"&gt;&lt;/say-as&gt;</ComboBoxItem>
+                            <ComboBoxItem>&lt;say-as interpret-as="cardinal"&gt;&lt;/say-as&gt;</ComboBoxItem>
+                            <ComboBoxItem>&lt;say-as interpret-as="ordinal"&gt;&lt;/say-as&gt;</ComboBoxItem>
+                            <ComboBoxItem>&lt;say-as interpret-as="spell-out"&gt;&lt;/say-as&gt;</ComboBoxItem>
+                            <ComboBoxItem>&lt;say-as interpret-as="telephone"&gt;&lt;/say-as&gt;</ComboBoxItem>
+                            <ComboBoxItem>&lt;sub alias="substitute text"&gt;&lt;/sub&gt;</ComboBoxItem>
                         </ComboBox>
+                        <Separator/>
+                        <Button Name="btnWrapSSML" Click="WrapSSML_Click" ToolTip="Wrap selected text with SSML" Background="LightBlue">
+                            <TextBlock Text="Wrap Selection"/>
+                        </Button>
+                        <Button Name="btnTestSelection" Click="TestSelection_Click" ToolTip="Preview selected text (Note: Voice changes may not apply in preview)" Background="LightGreen">
+                            <TextBlock Text="🔊 Preview"/>
+                        </Button>
+                        <Button Name="btnStopTestSelection" Click="StopTestSelection_Click" ToolTip="Stop preview" Background="LightCoral" IsEnabled="False">
+                            <TextBlock Text="⏹ Stop"/>
+                        </Button>
+                        <Button Name="btnHighlightSSML" Click="HighlightSSML_Click" ToolTip="Highlight SSML tags">
+                            <TextBlock Text="🔍 Highlight SSML"/>
+                        </Button>
+                        <Button Name="btnValidateSSML" Click="ValidateSSML_Click" ToolTip="Validate SSML syntax" Background="LightYellow">
+                            <TextBlock Text="✓ Validate"/>
+                        </Button>
                     </ToolBar>
                     
                     <!-- Text Box -->
@@ -140,7 +218,7 @@
         </Grid>
         
         <!-- Output Log and Playback Controls -->
-        <Grid Grid.Row="2">
+        <Grid Grid.Row="3">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
@@ -196,7 +274,7 @@
         </Grid>
         
         <!-- Status Bar -->
-        <StatusBar Grid.Row="3">
+        <StatusBar Grid.Row="4">
             <StatusBarItem>
                 <TextBlock Name="txtStatus" Text="Ready"/>
             </StatusBarItem>

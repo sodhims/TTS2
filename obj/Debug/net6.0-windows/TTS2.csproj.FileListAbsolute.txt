@@ -34,3 +34,4 @@ C:\Users\sodhi\source\repos\TTS2\TTS2\obj\Debug\net6.0-windows\TTS2.pdb
 C:\Users\sodhi\source\repos\TTS2\TTS2\obj\Debug\net6.0-windows\TTS2.genruntimeconfig.cache
 C:\Users\sodhi\source\repos\TTS2\TTS2\obj\Debug\net6.0-windows\ref\TTS2.dll
 C:\Users\sodhi\source\repos\TTS2\TTS2\bin\Debug\net6.0-windows\runtimes\browser\lib\net6.0\System.Text.Encodings.Web.dll
+C:\Users\sodhi\source\repos\TTS2\TTS2\obj\Debug\net6.0-windows\TTS2.sourcelink.json

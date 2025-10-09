@@ -35,6 +35,13 @@
                 </MenuItem>
             </MenuItem>
             <MenuItem Header="Edit">
+                <MenuItem Header="Find..."
+                        Click="Find_Click"
+                        InputGestureText="Ctrl+F">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🔍"/>
+                    </MenuItem.Icon>
+                </MenuItem>
                 <MenuItem Header="Find and Replace..." Click="FindReplace_Click" InputGestureText="Ctrl+H">
                     <MenuItem.Icon>
                         <TextBlock Text="🔍"/>
@@ -202,6 +209,13 @@
                             <ComboBoxItem>WAV</ComboBoxItem>
                             <ComboBoxItem>MP3</ComboBoxItem>
                         </ComboBox>
+                        <Label Content="Options:"
+                                Margin="0,10,0,0"/>
+                        <CheckBox Name="chkRetainUnmergedFiles"
+                                Content="Keep sub-files (001a, 001b, etc.)"
+                                  Margin="5"
+                                IsChecked="False"
+                                  ToolTip="Keep individual service files before merging"/>
                     </StackPanel>
                     
                     <!-- Test Voice Buttons -->

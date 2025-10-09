@@ -296,56 +296,424 @@ namespace TTS2
             }
             LoadVoices();
         }
-        
+
         // private void APIKey_Click(object sender, RoutedEventArgs e)
         // {
-            // var dialog = new Window
-            // {
-                // Title = "Enter Google Cloud API Key",
-                // Width = 400,
-                // Height = 150,
-                // WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                // Owner = this
-            // };
-            
-            // var grid = new Grid();
-            // var textBox = new TextBox 
-            // { 
-                // Margin = new Thickness(10),
-                // VerticalAlignment = VerticalAlignment.Center,
-                // Text = googleApiKey
-            // };
-            
-            // var buttonPanel = new StackPanel
-            // {
-                // Orientation = Orientation.Horizontal,
-                // HorizontalAlignment = HorizontalAlignment.Right,
-                // VerticalAlignment = VerticalAlignment.Bottom,
-                // Margin = new Thickness(10)
-            // };
-            
-            // var okButton = new Button { Content = "OK", Width = 75, Margin = new Thickness(5) };
-            // var cancelButton = new Button { Content = "Cancel", Width = 75, Margin = new Thickness(5) };
-            
-            // okButton.Click += (s, args) =>
-            // {
-                // googleApiKey = textBox.Text;
-                // LogMessage("Google API Key set successfully");
-                // dialog.DialogResult = true;
-            // };
-            
-            // cancelButton.Click += (s, args) => dialog.DialogResult = false;
-            
-            // buttonPanel.Children.Add(okButton);
-            // buttonPanel.Children.Add(cancelButton);
-            
-            // grid.Children.Add(textBox);
-            // grid.Children.Add(buttonPanel);
-            // dialog.Content = grid;
-            
-            // dialog.ShowDialog();
+        // var dialog = new Window
+        // {
+        // Title = "Enter Google Cloud API Key",
+        // Width = 400,
+        // Height = 150,
+        // WindowStartupLocation = WindowStartupLocation.CenterOwner,
+        // Owner = this
+        // };
+
+        // var grid = new Grid();
+        // var textBox = new TextBox 
+        // { 
+        // Margin = new Thickness(10),
+        // VerticalAlignment = VerticalAlignment.Center,
+        // Text = googleApiKey
+        // };
+
+        // var buttonPanel = new StackPanel
+        // {
+        // Orientation = Orientation.Horizontal,
+        // HorizontalAlignment = HorizontalAlignment.Right,
+        // VerticalAlignment = VerticalAlignment.Bottom,
+        // Margin = new Thickness(10)
+        // };
+
+        // var okButton = new Button { Content = "OK", Width = 75, Margin = new Thickness(5) };
+        // var cancelButton = new Button { Content = "Cancel", Width = 75, Margin = new Thickness(5) };
+
+        // okButton.Click += (s, args) =>
+        // {
+        // googleApiKey = textBox.Text;
+        // LogMessage("Google API Key set successfully");
+        // dialog.DialogResult = true;
+        // };
+
+        // cancelButton.Click += (s, args) => dialog.DialogResult = false;
+
+        // buttonPanel.Children.Add(okButton);
+        // buttonPanel.Children.Add(cancelButton);
+
+        // grid.Children.Add(textBox);
+        // grid.Children.Add(buttonPanel);
+        // dialog.Content = grid;
+
+        // dialog.ShowDialog();
         // }
-        
+
+        private void Find_Click(object sender, RoutedEventArgs e)
+        {
+            var findWindow = new Window
+            {
+                Title = "Find",
+                Width = 450,
+                Height = 220,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Owner = this,
+                ResizeMode = ResizeMode.NoResize
+            };
+
+            var grid = new Grid();
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            // Find section
+            var findLabel = new Label { Content = "Find what:", Margin = new Thickness(10, 10, 10, 0) };
+            var findTextBox = new TextBox
+            {
+                Margin = new Thickness(10, 5, 10, 10),
+                Height = 25,
+                FontFamily = new FontFamily("Consolas")
+            };
+
+            // Options
+            var optionsPanel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(10, 0, 10, 10)
+            };
+
+            var matchCaseCheckBox = new CheckBox
+            {
+                Content = "Match case",
+                Margin = new Thickness(0, 0, 20, 0),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            var highlightAllCheckBox = new CheckBox
+            {
+                Content = "Highlight all",
+                VerticalAlignment = VerticalAlignment.Center,
+                IsChecked = true
+            };
+
+            optionsPanel.Children.Add(matchCaseCheckBox);
+            optionsPanel.Children.Add(highlightAllCheckBox);
+
+            // Statistics label
+            var statsLabel = new Label
+            {
+                Content = "",
+                Margin = new Thickness(10, 0, 10, 10),
+                FontStyle = FontStyles.Italic
+            };
+
+            // Button panel
+            var buttonPanel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(10)
+            };
+
+            var findNextButton = new Button
+            {
+                Content = "Find Next",
+                Width = 100,
+                Height = 30,
+                Margin = new Thickness(5)
+            };
+
+            var clearHighlightsButton = new Button
+            {
+                Content = "Clear Highlights",
+                Width = 120,
+                Height = 30,
+                Margin = new Thickness(5)
+            };
+
+            var closeButton = new Button
+            {
+                Content = "Close",
+                Width = 100,
+                Height = 30,
+                Margin = new Thickness(5)
+            };
+
+            // Current find position tracking
+            TextPointer currentFindPosition = null;
+
+            // Helper function to find text in document using TextPointer navigation
+            Func<TextPointer, string, bool, TextRange> findTextInRange = (startPosition, searchText, matchCase) =>
+            {
+                var navigator = startPosition;
+
+                while (navigator != null && navigator.CompareTo(rtbTextContent.Document.ContentEnd) < 0)
+                {
+                    if (navigator.GetPointerContext(LogicalDirection.Forward) == TextPointerContext.Text)
+                    {
+                        string textRun = navigator.GetTextInRun(LogicalDirection.Forward);
+
+                        StringComparison comparison = matchCase ?
+                            StringComparison.Ordinal :
+                            StringComparison.OrdinalIgnoreCase;
+
+                        int index = textRun.IndexOf(searchText, comparison);
+
+                        if (index >= 0)
+                        {
+                            var start = navigator.GetPositionAtOffset(index);
+                            var end = start.GetPositionAtOffset(searchText.Length);
+                            return new TextRange(start, end);
+                        }
+                    }
+
+                    navigator = navigator.GetNextContextPosition(LogicalDirection.Forward);
+                }
+
+                return null;
+            };
+
+            // Helper function to highlight all occurrences
+            Action highlightAll = () =>
+            {
+                string searchText = findTextBox.Text;
+                if (string.IsNullOrEmpty(searchText)) return;
+
+                // Clear existing highlights first
+                var fullRange = new TextRange(rtbTextContent.Document.ContentStart, rtbTextContent.Document.ContentEnd);
+                fullRange.ClearAllProperties();
+
+                bool matchCase = matchCaseCheckBox.IsChecked == true;
+                int highlightCount = 0;
+
+                TextPointer position = rtbTextContent.Document.ContentStart;
+
+                while (position != null)
+                {
+                    TextRange foundRange = findTextInRange(position, searchText, matchCase);
+
+                    if (foundRange != null)
+                    {
+                        foundRange.ApplyPropertyValue(TextElement.BackgroundProperty, Brushes.Yellow);
+                        foundRange.ApplyPropertyValue(TextElement.ForegroundProperty, Brushes.Black);
+                        highlightCount++;
+                        position = foundRange.End;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+
+                statsLabel.Content = highlightCount > 0 ?
+                    $"Highlighted {highlightCount} occurrence(s)" :
+                    "No occurrences found";
+
+                currentFindPosition = null;
+            };
+
+            // Find Next functionality
+            findNextButton.Click += (s, args) =>
+            {
+                string searchText = findTextBox.Text;
+                if (string.IsNullOrEmpty(searchText)) return;
+
+                bool matchCase = matchCaseCheckBox.IsChecked == true;
+
+                // Start from current position or beginning
+                TextPointer startPos = currentFindPosition ?? rtbTextContent.Document.ContentStart;
+
+                TextRange foundRange = findTextInRange(startPos, searchText, matchCase);
+
+                if (foundRange == null && currentFindPosition != null)
+                {
+                    // Wrap around to beginning
+                    foundRange = findTextInRange(rtbTextContent.Document.ContentStart, searchText, matchCase);
+                }
+
+                if (foundRange != null)
+                {
+                    // Clear previous orange highlight
+                    var fullRange = new TextRange(rtbTextContent.Document.ContentStart, rtbTextContent.Document.ContentEnd);
+                    fullRange.ApplyPropertyValue(TextElement.BackgroundProperty, null);
+
+                    // Re-apply yellow highlights if enabled
+                    if (highlightAllCheckBox.IsChecked == true)
+                    {
+                        TextPointer position = rtbTextContent.Document.ContentStart;
+                        while (position != null)
+                        {
+                            TextRange yellowRange = findTextInRange(position, searchText, matchCase);
+                            if (yellowRange != null)
+                            {
+                                yellowRange.ApplyPropertyValue(TextElement.BackgroundProperty, Brushes.Yellow);
+                                yellowRange.ApplyPropertyValue(TextElement.ForegroundProperty, Brushes.Black);
+                                position = yellowRange.End;
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+                    }
+
+                    // Highlight current match in orange
+                    foundRange.ApplyPropertyValue(TextElement.BackgroundProperty, Brushes.Orange);
+                    foundRange.ApplyPropertyValue(TextElement.ForegroundProperty, Brushes.Black);
+
+                    // Select and scroll to it
+                    rtbTextContent.Selection.Select(foundRange.Start, foundRange.End);
+                    rtbTextContent.Focus();
+
+                    var rect = foundRange.Start.GetCharacterRect(LogicalDirection.Forward);
+                    rtbTextContent.ScrollToVerticalOffset(rect.Top);
+
+                    currentFindPosition = foundRange.End;
+                }
+                else
+                {
+                    MessageBox.Show("No more occurrences found.", "Find", MessageBoxButton.OK, MessageBoxImage.Information);
+                    currentFindPosition = null;
+                }
+            };
+
+            // Clear highlights button
+            clearHighlightsButton.Click += (s, args) =>
+            {
+                var fullRange = new TextRange(rtbTextContent.Document.ContentStart, rtbTextContent.Document.ContentEnd);
+                fullRange.ClearAllProperties();
+                statsLabel.Content = "Highlights cleared";
+                currentFindPosition = null;
+            };
+
+            closeButton.Click += (s, args) => findWindow.Close();
+
+            // Update highlighting when find text changes
+            findTextBox.TextChanged += (s, args) =>
+            {
+                string searchText = findTextBox.Text;
+                if (string.IsNullOrEmpty(searchText))
+                {
+                    var fullRange = new TextRange(rtbTextContent.Document.ContentStart, rtbTextContent.Document.ContentEnd);
+                    fullRange.ClearAllProperties();
+                    statsLabel.Content = "";
+                    currentFindPosition = null;
+                    return;
+                }
+
+                if (highlightAllCheckBox.IsChecked == true)
+                {
+                    highlightAll();
+                }
+                else
+                {
+                    // Just show count without highlighting
+                    bool matchCase = matchCaseCheckBox.IsChecked == true;
+                    int count = 0;
+                    TextPointer position = rtbTextContent.Document.ContentStart;
+
+                    while (position != null)
+                    {
+                        TextRange foundRange = findTextInRange(position, searchText, matchCase);
+                        if (foundRange != null)
+                        {
+                            count++;
+                            position = foundRange.End;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+
+                    statsLabel.Content = count > 0 ? $"Found {count} occurrence(s)" : "No occurrences found";
+                }
+
+                currentFindPosition = null;
+            };
+
+            // Re-highlight when match case changes
+            matchCaseCheckBox.Checked += (s, args) =>
+            {
+                if (highlightAllCheckBox.IsChecked == true && !string.IsNullOrEmpty(findTextBox.Text))
+                {
+                    highlightAll();
+                }
+                currentFindPosition = null;
+            };
+
+            matchCaseCheckBox.Unchecked += (s, args) =>
+            {
+                if (highlightAllCheckBox.IsChecked == true && !string.IsNullOrEmpty(findTextBox.Text))
+                {
+                    highlightAll();
+                }
+                currentFindPosition = null;
+            };
+
+            // Toggle highlighting
+            highlightAllCheckBox.Checked += (s, args) =>
+            {
+                if (!string.IsNullOrEmpty(findTextBox.Text))
+                {
+                    highlightAll();
+                }
+            };
+
+            highlightAllCheckBox.Unchecked += (s, args) =>
+            {
+                var fullRange = new TextRange(rtbTextContent.Document.ContentStart, rtbTextContent.Document.ContentEnd);
+                fullRange.ClearAllProperties();
+                currentFindPosition = null;
+            };
+
+            // Layout
+            Grid.SetRow(findLabel, 0);
+            Grid.SetRow(findTextBox, 1);
+            Grid.SetRow(optionsPanel, 2);
+            Grid.SetRow(statsLabel, 3);
+            Grid.SetRow(buttonPanel, 4);
+
+            grid.Children.Add(findLabel);
+            grid.Children.Add(findTextBox);
+            grid.Children.Add(optionsPanel);
+            grid.Children.Add(statsLabel);
+            grid.Children.Add(buttonPanel);
+
+            buttonPanel.Children.Add(findNextButton);
+            buttonPanel.Children.Add(clearHighlightsButton);
+            buttonPanel.Children.Add(closeButton);
+
+            findWindow.Content = grid;
+
+            // Focus on find textbox when window opens
+            findWindow.Loaded += (s, args) =>
+            {
+                findTextBox.Focus();
+
+                // If there's selected text, use it as the find text
+                if (!rtbTextContent.Selection.IsEmpty)
+                {
+                    findTextBox.Text = rtbTextContent.Selection.Text;
+                    findTextBox.SelectAll();
+                }
+            };
+
+            // Handle keyboard shortcuts in the window
+            findWindow.PreviewKeyDown += (s, args) =>
+            {
+                if (args.Key == Key.Escape)
+                {
+                    findWindow.Close();
+                }
+                else if (args.Key == Key.F3 || args.Key == Key.Enter)
+                {
+                    findNextButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    args.Handled = true;
+                }
+            };
+
+            findWindow.ShowDialog();
+        }   
         private void InsertSplit_Click(object sender, RoutedEventArgs e)
         {
             var caretPos = rtbTextContent.CaretPosition;
@@ -1218,134 +1586,275 @@ namespace TTS2
                 // Show progress
                 progressBar.Visibility = Visibility.Visible;
                 txtStatus.Text = "Converting...";
-        // Run conversion in background
-                await Task.Run(async () =>
-                {
-                    // Clear previous file list
-                    createdAudioFiles.Clear();
-                    
-                    // Process splits and voice changes
-                    var segments = ProcessTextSegments(text);
-                    
-                    Dispatcher.Invoke(() => LogMessage($"Processing {segments.Count} segments"));
-                    
-                    // Group segments by SplitIndex
-                    var segmentGroups = segments.GroupBy(s => s.SplitIndex).OrderBy(g => g.Key).ToList();
-                    
-                    for (int groupIndex = 0; groupIndex < segmentGroups.Count; groupIndex++)
-                    {
-                        var group = segmentGroups[groupIndex];
-                        var groupSegments = group.ToList();
-                        
-                        Dispatcher.Invoke(() => 
-                        {
-                            progressBar.Value = (groupIndex * 100) / segmentGroups.Count;
-                        });
-                        
-                        string baseFileName = $"output_{groupIndex + 1:D3}";
-                        var tempFiles = new List<string>();
-                        
-                        // Process each sub-segment
-                        for (int subIndex = 0; subIndex < groupSegments.Count; subIndex++)
-                        {
-                            var segment = groupSegments[subIndex];
-                            
-                            string subFileName = groupSegments.Count > 1 
-                                ? $"{baseFileName}{(char)('a' + subIndex)}" 
-                                : baseFileName;
-                            
-                            string outputFile = Path.Combine(outputPath, subFileName);
-                            
-                            // Determine which service to use
-                            int serviceToUse = segment.ServiceIndex >= 0 ? segment.ServiceIndex : engineIndex;
-                            
-                            Dispatcher.Invoke(() => 
-                                LogMessage($"Segment {groupIndex + 1}.{subIndex + 1}: File={subFileName}, Service={serviceToUse + 1}, Voice={segment.VoiceIndex}, Length={segment.Text.Length} chars"));
-                            
-                            try
-                            {
-                                if (serviceToUse == 0) // Windows SAPI
-                                {
-                                    await ConvertWithSAPIBackground(segment, outputFile, rateValue, volumeValue, outputFormatIndex);
-                                }
-                                else if (serviceToUse == 1) // Google Cloud TTS
-                                {
-                                    await ConvertWithGoogleTTSBackground(segment, outputFile, rateValue, volumeValue, outputFormatIndex);
-                                }
-                                else if (serviceToUse == 2) // AWS Polly
-                                {
-                                    await ConvertWithAWSPollyBackground(segment, outputFile, rateValue, volumeValue, outputFormatIndex);
-                                }
-                                else if (serviceToUse == 3) // ElevenLabs
-                                {
-                                    await ConvertWithElevenLabsBackground(segment, outputFile, rateValue, volumeValue, outputFormatIndex);
-                                }
-                                
-                                string extension = outputFormatIndex == 0 ? ".wav" : ".mp3";
-                                string fullPath = outputFile + extension;
-                                
-                                if (File.Exists(fullPath))
-                                {
-                                    tempFiles.Add(fullPath);
-                                    Dispatcher.Invoke(() => LogMessage($"Created: {fullPath}"));
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                Dispatcher.Invoke(() => LogMessage($"Error converting segment: {ex.Message}"));
-                            }
-                        }
-                        
-                        // Merge sub-files if there are multiple
-                        string finalFile = Path.Combine(outputPath, baseFileName + (outputFormatIndex == 0 ? ".wav" : ".mp3"));
-                        
-                        if (tempFiles.Count > 1)
-                        {
-                            Dispatcher.Invoke(() => LogMessage($"Merging {tempFiles.Count} sub-files into {baseFileName}..."));
-                            
-                            try
-                            {
-                                await MergeAudioFiles(tempFiles, finalFile);
-                                
-                                // Delete temp files after merging
-                                foreach (var tempFile in tempFiles)
-                                {
-                                    File.Delete(tempFile);
-                                }
-                                
-                                Dispatcher.Invoke(() => LogMessage($"Merged into: {finalFile}"));
-                            }
-                            catch (Exception ex)
-                            {
-                                Dispatcher.Invoke(() => LogMessage($"Error merging files: {ex.Message}"));
-                            }
-                        }
-                        else if (tempFiles.Count == 1)
-                        {
-                            // Only one file, just rename it if needed
-                            if (tempFiles[0] != finalFile)
-                            {
-                                File.Move(tempFiles[0], finalFile);
-                            }
-                        }
-                        
-                        if (File.Exists(finalFile))
-                        {
-                            createdAudioFiles.Add(finalFile);
-                        }
-                    }
-                    
-                    Dispatcher.Invoke(() =>
-                    {
-                        progressBar.Visibility = Visibility.Collapsed;
-                        txtStatus.Text = "Conversion complete";
-                        LogMessage($"All {segmentGroups.Count} files converted successfully!");
-                        
-                        // Enable playback controls
-                        UpdatePlaybackControls();
-                    });
-                });
-            }
+                // Run conversion in background
+                // Run conversion in background
+// Run conversion in background
+				await Task.Run(async () =>
+				{
+					// Clear previous file list
+					createdAudioFiles.Clear();
+					
+					// Process splits and voice changes
+					var segments = ProcessTextSegments(text);
+					
+					Dispatcher.Invoke(() => LogMessage($"Processing {segments.Count} segments"));
+					
+					// Group segments by SplitIndex (which now respects labels)
+					var segmentGroups = segments.GroupBy(s => s.SplitIndex).OrderBy(g => g.Key).ToList();
+					
+					// Track merge tasks
+					Task previousMergeTask = Task.CompletedTask;
+					string previousFinalFile = null;
+					bool retainUnmerged = false;
+					
+					Dispatcher.Invoke(() => retainUnmerged = chkRetainUnmergedFiles.IsChecked ?? false);
+					
+					for (int groupIndex = 0; groupIndex < segmentGroups.Count; groupIndex++)
+					{
+						var group = segmentGroups[groupIndex];
+						var groupSegments = group.ToList();
+						
+						Dispatcher.Invoke(() => 
+						{
+							progressBar.Value = (groupIndex * 100) / segmentGroups.Count;
+						});
+						
+						// Use the SplitIndex from the segment (which respects labels)
+						int outputNumber = group.Key;
+						string baseFileName = $"output_{outputNumber:D3}";
+						
+						// Check if this was explicitly labeled
+						bool hasLabel = groupSegments[0].LabelNumber.HasValue;
+						if (hasLabel)
+						{
+							Dispatcher.Invoke(() => LogMessage($"Using custom label: output_{outputNumber:D3}"));
+						}
+						
+						var tempFiles = new List<string>();
+						
+						// Process each sub-segment (TTS conversion - remote operation)
+						for (int subIndex = 0; subIndex < groupSegments.Count; subIndex++)
+						{
+							var segment = groupSegments[subIndex];
+							
+							string subFileName = groupSegments.Count > 1 
+								? $"{baseFileName}{(char)('a' + subIndex)}" 
+								: baseFileName;
+							
+							string outputFile = Path.Combine(outputPath, subFileName);
+							
+							// Determine which service to use
+							int serviceToUse = segment.ServiceIndex >= 0 ? segment.ServiceIndex : engineIndex;
+							
+							Dispatcher.Invoke(() => 
+								LogMessage($"Segment {outputNumber}.{subIndex + 1}: File={subFileName}, Service={serviceToUse + 1}, Voice={segment.VoiceIndex}, Length={segment.Text.Length} chars"));
+							
+							bool conversionSuccess = false;
+							string conversionError = null;
+							
+							try
+							{
+								if (serviceToUse == 0) // Windows SAPI
+								{
+									await ConvertWithSAPIBackground(segment, outputFile, rateValue, volumeValue, outputFormatIndex);
+								}
+								else if (serviceToUse == 1) // Google Cloud TTS
+								{
+									await ConvertWithGoogleTTSBackground(segment, outputFile, rateValue, volumeValue, outputFormatIndex);
+								}
+								else if (serviceToUse == 2) // AWS Polly
+								{
+									await ConvertWithAWSPollyBackground(segment, outputFile, rateValue, volumeValue, outputFormatIndex);
+								}
+								else if (serviceToUse == 3) // ElevenLabs
+								{
+									await ConvertWithElevenLabsBackground(segment, outputFile, rateValue, volumeValue, outputFormatIndex);
+								}
+								
+								string extension = outputFormatIndex == 0 ? ".wav" : ".mp3";
+								string fullPath = outputFile + extension;
+								
+								// Verify file was actually created and has content
+								if (File.Exists(fullPath))
+								{
+									var fileInfo = new FileInfo(fullPath);
+									if (fileInfo.Length > 0)
+									{
+										tempFiles.Add(fullPath);
+										conversionSuccess = true;
+										Dispatcher.Invoke(() => LogMessage($"✓ Created: {fullPath} ({fileInfo.Length} bytes)"));
+									}
+									else
+									{
+										conversionError = "File created but is empty (0 bytes)";
+										Dispatcher.Invoke(() => 
+										{
+											LogMessage($"✗ ERROR: {fullPath} is empty!");
+											MessageBox.Show($"Error: Audio file {subFileName} was created but is empty.\n\nSegment text: {segment.Text.Substring(0, Math.Min(100, segment.Text.Length))}...", 
+												"File Creation Error", MessageBoxButton.OK, MessageBoxImage.Error);
+										});
+									}
+								}
+								else
+								{
+									conversionError = "File was not created";
+									Dispatcher.Invoke(() => 
+									{
+										LogMessage($"✗ ERROR: File not created: {fullPath}");
+										
+										string serviceName = serviceToUse switch
+										{
+											0 => "Windows SAPI",
+											1 => "Google Cloud TTS",
+											2 => "AWS Polly",
+											3 => "ElevenLabs",
+											_ => "Unknown"
+										};
+										
+										MessageBox.Show($"Error: Failed to create audio file {subFileName}\n\n" +
+											$"Service: {serviceName}\n" +
+											$"Voice Index: {segment.VoiceIndex}\n" +
+											$"Text length: {segment.Text.Length} chars\n" +
+											$"Text preview: {segment.Text.Substring(0, Math.Min(100, segment.Text.Length))}...\n\n" +
+											$"Check the log for details.", 
+											"File Creation Error", MessageBoxButton.OK, MessageBoxImage.Error);
+									});
+								}
+							}
+							catch (Exception ex)
+							{
+								conversionError = ex.Message;
+								Dispatcher.Invoke(() => 
+								{
+									LogMessage($"✗ ERROR converting segment {outputNumber}.{subIndex + 1}: {ex.Message}");
+									
+									string serviceName = serviceToUse switch
+									{
+										0 => "Windows SAPI",
+										1 => "Google Cloud TTS",
+										2 => "AWS Polly",
+										3 => "ElevenLabs",
+										_ => "Unknown"
+									};
+									
+									MessageBox.Show($"Exception during conversion:\n\n" +
+										$"Segment: {outputNumber}.{subIndex + 1}\n" +
+										$"File: {subFileName}\n" +
+										$"Service: {serviceName}\n" +
+										$"Error: {ex.Message}\n\n" +
+										$"Text preview: {segment.Text.Substring(0, Math.Min(100, segment.Text.Length))}...", 
+										"Conversion Exception", MessageBoxButton.OK, MessageBoxImage.Error);
+								});
+							}
+							
+							// Log summary for this segment
+							if (!conversionSuccess)
+							{
+								Dispatcher.Invoke(() => 
+									LogMessage($"⚠ Segment {outputNumber}.{subIndex + 1} FAILED: {conversionError ?? "Unknown error"}"));
+							}
+						}
+						
+						// Wait for previous merge to complete before starting new conversion
+						await previousMergeTask;
+						
+						// If previous merge completed, add the final file to list
+						if (previousFinalFile != null && File.Exists(previousFinalFile))
+						{
+							createdAudioFiles.Add(previousFinalFile);
+						}
+						
+						// Start merging current files (asynchronously)
+						string currentFinalFile = Path.Combine(outputPath, baseFileName + (outputFormatIndex == 0 ? ".wav" : ".mp3"));
+						
+						if (tempFiles.Count > 1)
+						{
+							Dispatcher.Invoke(() => LogMessage($"Starting merge of {tempFiles.Count} sub-files into {baseFileName}..."));
+							
+							var currentTempFiles = new List<string>(tempFiles);
+							var currentFinal = currentFinalFile;
+							
+							previousMergeTask = Task.Run(async () =>
+							{
+								try
+								{
+									await MergeAudioFiles(currentTempFiles, currentFinal);
+									
+									Dispatcher.Invoke(() => LogMessage($"Merged into: {currentFinal}"));
+									
+									if (!retainUnmerged)
+									{
+										foreach (var tempFile in currentTempFiles)
+										{
+											try
+											{
+												File.Delete(tempFile);
+												Dispatcher.Invoke(() => LogMessage($"Deleted temp file: {Path.GetFileName(tempFile)}"));
+											}
+											catch (Exception ex)
+											{
+												Dispatcher.Invoke(() => LogMessage($"Could not delete {tempFile}: {ex.Message}"));
+											}
+										}
+									}
+									else
+									{
+										Dispatcher.Invoke(() => LogMessage($"Retained {currentTempFiles.Count} sub-files"));
+									}
+								}
+								catch (Exception ex)
+								{
+									Dispatcher.Invoke(() => LogMessage($"Error merging files: {ex.Message}"));
+								}
+							});
+							
+							previousFinalFile = currentFinalFile;
+						}
+						else if (tempFiles.Count == 1)
+						{
+							if (tempFiles[0] != currentFinalFile)
+							{
+								previousMergeTask = Task.Run(() =>
+								{
+									try
+									{
+										File.Move(tempFiles[0], currentFinalFile);
+									}
+									catch (Exception ex)
+									{
+										Dispatcher.Invoke(() => LogMessage($"Error moving file: {ex.Message}"));
+									}
+								});
+							}
+							else
+							{
+								previousMergeTask = Task.CompletedTask;
+							}
+							
+							previousFinalFile = currentFinalFile;
+						}
+					}
+					
+					// Wait for the final merge to complete
+					await previousMergeTask;
+					
+					// Add the last final file
+					if (previousFinalFile != null && File.Exists(previousFinalFile))
+					{
+						createdAudioFiles.Add(previousFinalFile);
+					}
+					
+					Dispatcher.Invoke(() =>
+					{
+						progressBar.Visibility = Visibility.Collapsed;
+						txtStatus.Text = "Conversion complete";
+						LogMessage($"All {segmentGroups.Count} files converted successfully!");
+						
+						// Enable playback controls
+						UpdatePlaybackControls();
+					});
+				});
+			}
             catch (Exception ex)
             {
                 LogMessage($"Error during conversion: {ex.Message}");
@@ -1563,7 +2072,7 @@ namespace TTS2
                 }
                 
                 // Also highlight <split> and <voice> tags
-                pattern = @"<(?:split|voice=\d+|service=\d+)>";
+				pattern = @"<(?:split|voice=\d+|service=\d+|label=\d+)>";
                 matches = Regex.Matches(text, pattern, RegexOptions.IgnoreCase);
 
                 foreach (Match match in matches)
@@ -1694,39 +2203,146 @@ namespace TTS2
 
         
         // Part 2: Helper Methods
-        private List<TextSegment> ProcessTextSegments(string text)
+private List<TextSegment> ProcessTextSegments(string text)
+{
+    var segments = new List<TextSegment>();
+    
+    // Split by <split> tags first
+    var splitPattern = @"<split>";
+    var majorParts = Regex.Split(text, splitPattern, RegexOptions.IgnoreCase);
+    
+    int currentOutputNumber = 1; // Track the current output file number
+    
+    for (int splitIndex = 0; splitIndex < majorParts.Length; splitIndex++)
+    {
+        var part = majorParts[splitIndex];
+        if (string.IsNullOrWhiteSpace(part)) continue;
+        
+        // Check for <label=N> tag at the beginning of this section
+        var labelMatch = Regex.Match(part, @"^\s*<label=(\d+)>", RegexOptions.IgnoreCase);
+        int? labelNumber = null;
+        
+        if (labelMatch.Success)
         {
-            var segments = new List<TextSegment>();
-            
-            // Split by <split> tags first
-            var splitPattern = @"<split>";
-            var majorParts = Regex.Split(text, splitPattern, RegexOptions.IgnoreCase);
-            
-            for (int splitIndex = 0; splitIndex < majorParts.Length; splitIndex++)
-            {
-                var part = majorParts[splitIndex];
-                if (string.IsNullOrWhiteSpace(part)) continue;
-                
-                // Within each split section, process service/voice changes
-                var subSegments = ProcessServiceAndVoiceChanges(part, splitIndex);
-                segments.AddRange(subSegments);
-            }
-            
-            if (segments.Count == 0)
-            {
-                segments.Add(new TextSegment 
-                { 
-                    Text = text, 
-                    VoiceIndex = 0,
-                    ServiceIndex = -1,
-                    SplitIndex = 0,
-                    SubIndex = 0
-                });
-            }
-            
-            return segments;
+            labelNumber = int.Parse(labelMatch.Groups[1].Value);
+            currentOutputNumber = labelNumber.Value;
+            // Remove the label tag from the text
+            part = part.Substring(labelMatch.Length);
         }
+        
+        // Within each split section, process service/voice changes
+        var subSegments = ProcessServiceAndVoiceChanges(part, currentOutputNumber, labelNumber);
+        segments.AddRange(subSegments);
+        
+        // Increment for next segment (unless it has its own label)
+        currentOutputNumber++;
+    }
+    
+    if (segments.Count == 0)
+    {
+        segments.Add(new TextSegment 
+        { 
+            Text = text, 
+            VoiceIndex = 0,
+            ServiceIndex = -1,
+            SplitIndex = 0,
+            SubIndex = 0,
+            LabelNumber = null
+        });
+    }
+    
+    return segments;
+}
 
+	private List<TextSegment> ProcessServiceAndVoiceChanges(string text, int outputNumber, int? labelNumber)
+	{
+		var segments = new List<TextSegment>();
+		int currentVoiceIndex = 0;
+		int currentServiceIndex = -1;
+		int subIndex = 0;
+		
+		// Find all service and voice tags
+		var pattern = @"<(voice|service)=(\d+)>";
+		var matches = Regex.Matches(text, pattern, RegexOptions.IgnoreCase);
+		
+		if (matches.Count == 0)
+		{
+			// No service/voice changes, just one segment
+			var cleanText = text.Trim();
+			if (!string.IsNullOrEmpty(cleanText))
+			{
+				segments.Add(new TextSegment 
+				{ 
+					Text = cleanText, 
+					VoiceIndex = currentVoiceIndex,
+					ServiceIndex = currentServiceIndex,
+					SplitIndex = outputNumber,
+					SubIndex = subIndex,
+					LabelNumber = labelNumber
+				});
+			}
+			return segments;
+		}
+		
+		int lastIndex = 0;
+		
+		foreach (Match match in matches)
+		{
+			// Add text before the tag
+			if (match.Index > lastIndex)
+			{
+				var beforeText = text.Substring(lastIndex, match.Index - lastIndex).Trim();
+				if (!string.IsNullOrEmpty(beforeText))
+				{
+					segments.Add(new TextSegment 
+					{ 
+						Text = beforeText, 
+						VoiceIndex = currentVoiceIndex,
+						ServiceIndex = currentServiceIndex,
+						SplitIndex = outputNumber,
+						SubIndex = subIndex,
+						LabelNumber = labelNumber
+					});
+					subIndex++;
+				}
+			}
+			
+			// Process the tag
+			string tagType = match.Groups[1].Value.ToLower();
+			int tagValue = int.Parse(match.Groups[2].Value);
+			
+			if (tagType == "voice")
+			{
+				currentVoiceIndex = tagValue - 1;
+			}
+			else if (tagType == "service")
+			{
+				currentServiceIndex = tagValue - 1;
+			}
+			
+			lastIndex = match.Index + match.Length;
+		}
+		
+		// Add remaining text after last tag
+		if (lastIndex < text.Length)
+		{
+			var remainingText = text.Substring(lastIndex).Trim();
+			if (!string.IsNullOrEmpty(remainingText))
+			{
+				segments.Add(new TextSegment 
+				{ 
+					Text = remainingText, 
+					VoiceIndex = currentVoiceIndex,
+					ServiceIndex = currentServiceIndex,
+					SplitIndex = outputNumber,
+					SubIndex = subIndex,
+					LabelNumber = labelNumber
+				});
+			}
+		}
+		
+		return segments;
+	}
         private List<TextSegment> ProcessServiceAndVoiceChanges(string text, int splitIndex)
         {
             var segments = new List<TextSegment>();
@@ -1813,8 +2429,8 @@ namespace TTS2
             
             return segments;
         }
-        
-        private async Task ConvertWithSAPIBackground(TextSegment segment, string outputFile, 
+
+        private async Task ConvertWithSAPIBackground(TextSegment segment, string outputFile,
             double rateValue, double volumeValue, int outputFormatIndex)
         {
             await Task.Run(() =>
@@ -1822,29 +2438,29 @@ namespace TTS2
                 using (var synth = new SpeechSynthesizer())
                 {
                     var voices = synth.GetInstalledVoices();
-                    
+
                     // Select the appropriate voice based on the segment's voice index
                     if (segment.VoiceIndex >= 0 && segment.VoiceIndex < voices.Count)
                     {
                         synth.SelectVoice(voices[segment.VoiceIndex].VoiceInfo.Name);
-                        Dispatcher.Invoke(() => 
+                        Dispatcher.Invoke(() =>
                             LogMessage($"SAPI: Using voice {voices[segment.VoiceIndex].VoiceInfo.Name} (index {segment.VoiceIndex})"));
                     }
                     else if (voices.Count > 0)
                     {
                         synth.SelectVoice(voices[0].VoiceInfo.Name);
-                        Dispatcher.Invoke(() => 
+                        Dispatcher.Invoke(() =>
                             LogMessage($"SAPI: Using default voice {voices[0].VoiceInfo.Name}"));
                     }
-                    
+
                     synth.Rate = (int)rateValue;
                     synth.Volume = (int)volumeValue;
-                    
+
                     string extension = outputFormatIndex == 0 ? ".wav" : ".mp3";
-                    string wavFile = outputFile + ".wav";
-                    
+                    string wavFile = outputFile + ".wav";  // MOVED INSIDE Task.Run
+
                     synth.SetOutputToWaveFile(wavFile);
-                    
+
                     // Check if text contains SSML tags
                     if (ContainsSSMLTags(segment.Text))
                     {
@@ -1858,13 +2474,26 @@ namespace TTS2
                         // Speak as plain text
                         synth.Speak(segment.Text);
                     }
-                    
+
                     synth.SetOutputToDefaultAudioDevice();
-                    
+
+                    // Verify the file was created
+                    if (!File.Exists(wavFile))
+                    {
+                        throw new Exception($"SAPI reported success but file was not created: {wavFile}");
+                    }
+
                     if (extension == ".mp3")
                     {
-                        ConvertWavToMp3(wavFile, outputFile + ".mp3");
-                        File.Delete(wavFile);
+                        try
+                        {
+                            ConvertWavToMp3(wavFile, outputFile + ".mp3");
+                            File.Delete(wavFile);
+                        }
+                        catch (Exception ex)
+                        {
+                            throw new Exception($"Failed to convert WAV to MP3: {ex.Message}");
+                        }
                     }
                 }
             });
@@ -1874,42 +2503,60 @@ namespace TTS2
         {
             if (pollyClient == null)
             {
-                throw new Exception("AWS Polly client not initialized");
+                throw new Exception("AWS Polly client not initialized. Please set AWS credentials.");
             }
-            
+
             var voicesList = awsVoices.Values.ToList();
-            
+
+            if (voicesList.Count == 0)
+            {
+                throw new Exception("No AWS Polly voices available.");
+            }
+
             // Default to first voice
-            string voiceToUse = voicesList.Count > 0 ? voicesList[0].VoiceId : "Joanna";
-            bool useNeural = voicesList.Count > 0 ? voicesList[0].Engine == "neural" : false;
-            
+            string voiceToUse = voicesList[0].VoiceId;
+            bool useNeural = voicesList[0].Engine == "neural";
+
             if (segment.VoiceIndex >= 0 && segment.VoiceIndex < voicesList.Count)
             {
                 voiceToUse = voicesList[segment.VoiceIndex].VoiceId;
                 useNeural = voicesList[segment.VoiceIndex].Engine == "neural";
-                Dispatcher.Invoke(() => 
+                Dispatcher.Invoke(() =>
                     LogMessage($"AWS Polly: Using voice {voiceToUse} ({(useNeural ? "Neural" : "Standard")}) (index {segment.VoiceIndex})"));
             }
             else
             {
-                Dispatcher.Invoke(() => 
-                    LogMessage($"AWS Polly: Using default voice {voiceToUse}"));
+                Dispatcher.Invoke(() =>
+                    LogMessage($"AWS Polly: Voice index {segment.VoiceIndex} out of range, using default voice {voiceToUse}"));
             }
-            
+
             string extension = outputFormatIndex == 0 ? ".wav" : ".mp3";
             string wavFile = outputFile + ".wav";
-            
+
             bool success = await CallAWSPollyWithSettings(segment.Text, wavFile, voiceToUse, useNeural, rateValue, volumeValue);
-            
+
             if (!success)
             {
-                throw new Exception("AWS Polly API call failed");
+                throw new Exception($"AWS Polly API call failed for voice {voiceToUse}");
             }
-            
+
+            // Verify the file was created
+            if (!File.Exists(wavFile))
+            {
+                throw new Exception($"AWS Polly reported success but file was not created: {wavFile}");
+            }
+
             if (extension == ".mp3")
             {
-                ConvertWavToMp3(wavFile, outputFile + ".mp3");
-                File.Delete(wavFile);
+                try
+                {
+                    ConvertWavToMp3(wavFile, outputFile + ".mp3");
+                    File.Delete(wavFile);
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception($"Failed to convert WAV to MP3: {ex.Message}");
+                }
             }
         }
         private async Task ConvertWithGoogleTTSBackground(TextSegment segment, string outputFile,
@@ -1945,40 +2592,52 @@ namespace TTS2
             
             if (!success)
             {
-                throw new Exception("Google TTS API call failed");
+                throw new Exception($"Google TTS API call failed for voice {voiceToUse}");
+            }
+            
+            // Verify the file was created
+            if (!File.Exists(wavFile))
+            {
+                throw new Exception($"Google TTS reported success but file was not created: {wavFile}");
             }
             
             if (extension == ".mp3")
             {
-                ConvertWavToMp3(wavFile, outputFile + ".mp3");
-                File.Delete(wavFile);
+                try
+                {
+                    ConvertWavToMp3(wavFile, outputFile + ".mp3");
+                    File.Delete(wavFile);
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception($"Failed to convert WAV to MP3: {ex.Message}");
+                }
             }
         }
-        
         private async Task<bool> CallGoogleTTS(string text, string outputFile)
         {
             try
             {
                 string url = $"https://texttospeech.googleapis.com/v1/text:synthesize?key={googleApiKey}";
-                
+
                 // Determine gender based on voice
                 string gender = "NEUTRAL";
-                if (currentGoogleVoice.Contains("-C") || currentGoogleVoice.Contains("-E") || 
+                if (currentGoogleVoice.Contains("-C") || currentGoogleVoice.Contains("-E") ||
                     currentGoogleVoice.Contains("-F") || currentGoogleVoice.Contains("-H"))
                 {
                     gender = "FEMALE";
                 }
-                else if (currentGoogleVoice.Contains("-A") || currentGoogleVoice.Contains("-B") || 
-                         currentGoogleVoice.Contains("-D") || currentGoogleVoice.Contains("-I") || 
+                else if (currentGoogleVoice.Contains("-A") || currentGoogleVoice.Contains("-B") ||
+                         currentGoogleVoice.Contains("-D") || currentGoogleVoice.Contains("-I") ||
                          currentGoogleVoice.Contains("-J"))
                 {
                     gender = "MALE";
                 }
-                
+
                 // Check if text contains SSML tags
                 bool useSSML = ContainsSSMLTags(text);
                 object inputObject;
-                
+
                 if (useSSML)
                 {
                     // Process as SSML
@@ -1991,7 +2650,7 @@ namespace TTS2
                     // Process as plain text
                     inputObject = new { text = text };
                 }
-                
+
                 var requestBody = new
                 {
                     input = inputObject,
@@ -2009,29 +2668,30 @@ namespace TTS2
                         volumeGainDb = (sliderVolume.Value - 100) / 5.0
                     }
                 };
-                
+
                 var json = JsonSerializer.Serialize(requestBody);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
-                
+
                 LogMessage($"Calling Google TTS with voice: {currentGoogleVoice}");
-                
+
                 var response = await httpClient.PostAsync(url, content);
-                
+
                 if (!response.IsSuccessStatusCode)
                 {
                     string errorContent = await response.Content.ReadAsStringAsync();
                     LogMessage($"Google TTS Error {response.StatusCode}: {errorContent}");
                     return false;
                 }
-                
+
+
                 var responseJson = await response.Content.ReadAsStringAsync();
                 var responseData = JsonSerializer.Deserialize<Dictionary<string, object>>(responseJson);
-                
+
                 if (responseData.ContainsKey("audioContent"))
                 {
                     string audioContent = responseData["audioContent"].ToString();
                     byte[] audioBytes = Convert.FromBase64String(audioContent);
-                    
+
                     // Write WAV header and data
                     using (var fs = new FileStream(outputFile, FileMode.Create))
                     using (var writer = new BinaryWriter(fs))
@@ -2043,7 +2703,7 @@ namespace TTS2
                         int byteRate = sampleRate * channels * (bitsPerSample / 8);
                         short blockAlign = (short)(channels * (bitsPerSample / 8));
                         int dataSize = audioBytes.Length;
-                        
+
                         writer.Write(Encoding.UTF8.GetBytes("RIFF"));
                         writer.Write(dataSize + 36);
                         writer.Write(Encoding.UTF8.GetBytes("WAVE"));
@@ -2059,11 +2719,11 @@ namespace TTS2
                         writer.Write(dataSize);
                         writer.Write(audioBytes);
                     }
-                    
+
                     LogMessage($"Successfully saved audio to {outputFile}");
                     return true;
                 }
-                
+
                 return false;
             }
             catch (Exception ex)
@@ -2548,13 +3208,12 @@ namespace TTS2
             var result = new SSMLValidationResult();
             var tagStack = new Stack<SSMLTag>();
             var selfClosingTags = new HashSet<string> { "break", "phoneme", "audio", "mark", "meta" };
-            var validTags = new HashSet<string> 
-            { 
-                "speak", "emphasis", "break", "prosody", "say-as", "phoneme", "sub", 
-                "audio", "p", "s", "voice", "mark", "desc", "lexicon", "metadata", "meta",
-                "split", "voice", "service" // Add service to valid tags
-            };
-            
+			var validTags = new HashSet<string> 
+			{ 
+				"speak", "emphasis", "break", "prosody", "say-as", "phoneme", "sub", 
+				"audio", "p", "s", "voice", "mark", "desc", "lexicon", "metadata", "meta",
+				"split", "voice", "service", "label" // Add label
+			};            
             // Pattern to match any tag (opening, closing, or self-closing)
             string tagPattern = @"<(/?)([a-zA-Z]+(?:=\d+)?)((?:\s+[a-zA-Z-]+(?:=[""'][^""']*[""'])?)*)\s*(/?)>";
             var matches = Regex.Matches(text, tagPattern);
@@ -2811,11 +3470,12 @@ namespace TTS2
         // Helper classes
         private class TextSegment
         {
-            public string Text { get; set; }
-            public int VoiceIndex { get; set; }
-            public int ServiceIndex { get; set; } = -1;
-            public int SplitIndex { get; set; } = 0;  // Which <split> section
-            public int SubIndex { get; set; } = 0;    // Sub-segment within split
+			public string Text { get; set; }
+			public int VoiceIndex { get; set; }
+			public int ServiceIndex { get; set; } = -1;
+			public int SplitIndex { get; set; } = 0;
+			public int SubIndex { get; set; } = 0;
+			public int? LabelNumber { get; set; } = null; // Custom output number
         }
         
         private class SSMLValidationResult
@@ -3310,48 +3970,60 @@ namespace TTS2
             }
         }
 
-        private async Task ConvertWithElevenLabsBackground(TextSegment segment, string outputFile,
-            double rateValue, double volumeValue, int outputFormatIndex)
+private async Task ConvertWithElevenLabsBackground(TextSegment segment, string outputFile,
+    double rateValue, double volumeValue, int outputFormatIndex)
+{
+    if (string.IsNullOrEmpty(elevenLabsApiKey))
+    {
+        throw new Exception("ElevenLabs API key not set");
+    }
+    
+    var voicesList = elevenLabsVoices.Values.ToList();
+    
+    // Default to first voice
+    string voiceToUse = voicesList.Count > 0 ? voicesList[0] : "21m00Tcm4TlvDq8ikWAM";
+    
+    if (segment.VoiceIndex >= 0 && segment.VoiceIndex < voicesList.Count)
+    {
+        voiceToUse = voicesList[segment.VoiceIndex];
+        Dispatcher.Invoke(() => 
+            LogMessage($"ElevenLabs: Using voice ID {voiceToUse} (index {segment.VoiceIndex})"));
+    }
+    else
+    {
+        Dispatcher.Invoke(() => 
+            LogMessage($"ElevenLabs: Using default voice ID {voiceToUse}"));
+    }
+    
+    string extension = outputFormatIndex == 0 ? ".wav" : ".mp3";
+    string wavFile = outputFile + ".wav";
+    
+    bool success = await CallElevenLabsWithSettings(segment.Text, wavFile, voiceToUse, rateValue, volumeValue);
+    
+    if (!success)
+    {
+        throw new Exception("ElevenLabs API call failed");
+    }
+    
+    // Verify the file was created
+    if (!File.Exists(wavFile))
+    {
+        throw new Exception($"ElevenLabs reported success but file was not created: {wavFile}");
+    }
+    
+    if (extension == ".mp3")
+    {
+        try
         {
-            if (string.IsNullOrEmpty(elevenLabsApiKey))
-            {
-                throw new Exception("ElevenLabs API key not set");
-            }
-            
-            var voicesList = elevenLabsVoices.Values.ToList();
-            
-            // Default to first voice
-            string voiceToUse = voicesList.Count > 0 ? voicesList[0] : "21m00Tcm4TlvDq8ikWAM";
-            
-            if (segment.VoiceIndex >= 0 && segment.VoiceIndex < voicesList.Count)
-            {
-                voiceToUse = voicesList[segment.VoiceIndex];
-                Dispatcher.Invoke(() => 
-                    LogMessage($"ElevenLabs: Using voice ID {voiceToUse} (index {segment.VoiceIndex})"));
-            }
-            else
-            {
-                Dispatcher.Invoke(() => 
-                    LogMessage($"ElevenLabs: Using default voice ID {voiceToUse}"));
-            }
-            
-            string extension = outputFormatIndex == 0 ? ".wav" : ".mp3";
-            string wavFile = outputFile + ".wav";
-            
-            bool success = await CallElevenLabsWithSettings(segment.Text, wavFile, voiceToUse, rateValue, volumeValue);
-            
-            if (!success)
-            {
-                throw new Exception("ElevenLabs API call failed");
-            }
-            
-            if (extension == ".mp3")
-            {
-                ConvertWavToMp3(wavFile, outputFile + ".mp3");
-                File.Delete(wavFile);
-            }
+            ConvertWavToMp3(wavFile, outputFile + ".mp3");
+            File.Delete(wavFile);
         }
-		private void FindReplace_Click(object sender, RoutedEventArgs e)
+        catch (Exception ex)
+        {
+            throw new Exception($"Failed to convert WAV to MP3: {ex.Message}");
+        }
+    }
+}		private void FindReplace_Click(object sender, RoutedEventArgs e)
 		{
 			var findReplaceWindow = new Window
 			{
@@ -3720,39 +4392,46 @@ namespace TTS2
 		}
 		private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
 		{
-			// Ctrl+H for Find/Replace
-			if (e.Key == Key.H && Keyboard.Modifiers == ModifierKeys.Control)
-			{
-				FindReplace_Click(sender, e);
-				e.Handled = true;
-			}
-			// Ctrl+O for Open
-			else if (e.Key == Key.O && Keyboard.Modifiers == ModifierKeys.Control)
-			{
-				OpenFile_Click(sender, e);
-				e.Handled = true;
-			}
-			// Ctrl+S for Save
-			else if (e.Key == Key.S && Keyboard.Modifiers == ModifierKeys.Control)
-			{
-				SaveText_Click(sender, e);
-				e.Handled = true;
-			}
-			// F5 for Convert/Generate Audio
-			else if (e.Key == Key.F5)
-			{
-				if (btnConvert.IsEnabled)
-				{
-					Convert_Click(sender, e);
-					e.Handled = true;
-				}
-			}
-			// Space for Play/Pause when focus is not in text editor
-			else if (e.Key == Key.Space && !rtbTextContent.IsFocused && btnPlayPause.IsEnabled)
-			{
-				PlayPause_Click(sender, e);
-				e.Handled = true;
-			}
+            // Ctrl+F for Find
+            if (e.Key == Key.F && Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                Find_Click(sender, e);
+                e.Handled = true;
+            }
+
+            // Ctrl+H for Find/Replace
+            if (e.Key == Key.H && Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                FindReplace_Click(sender, e);
+                e.Handled = true;
+            }
+            // Ctrl+O for Open
+            else if (e.Key == Key.O && Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                OpenFile_Click(sender, e);
+                e.Handled = true;
+            }
+            // Ctrl+S for Save
+            else if (e.Key == Key.S && Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                SaveText_Click(sender, e);
+                e.Handled = true;
+            }
+            // F5 for Convert/Generate Audio
+            else if (e.Key == Key.F5)
+            {
+                if (btnConvert.IsEnabled)
+                {
+                    Convert_Click(sender, e);
+                    e.Handled = true;
+                }
+            }
+            // Space for Play/Pause when focus is not in text editor
+            else if (e.Key == Key.Space && !rtbTextContent.IsFocused && btnPlayPause.IsEnabled)
+            {
+                PlayPause_Click(sender, e);
+                e.Handled = true;
+            }
 		}
     }
 }

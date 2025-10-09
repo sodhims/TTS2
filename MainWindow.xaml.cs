@@ -3108,6 +3108,470 @@ private List<TextSegment> ProcessTextSegments(string text)
             }
         }
         
+		private void AudioBrowser_Click(object sender, RoutedEventArgs e)
+		{
+			var browserWindow = new Window
+			{
+				Title = "Audio File Browser",
+				Width = 700,
+				Height = 500,
+				WindowStartupLocation = WindowStartupLocation.CenterOwner,
+				Owner = this
+			};
+			
+			var mainGrid = new Grid();
+			mainGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+			mainGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+			mainGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+			mainGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+			
+			// Top panel - Folder selection
+			var topPanel = new DockPanel
+			{
+				Margin = new Thickness(10)
+			};
+			
+			var selectFolderButton = new Button
+			{
+				Content = "Select Folder...",
+				Width = 120,
+				Height = 30,
+				Margin = new Thickness(0, 0, 10, 0)
+			};
+			DockPanel.SetDock(selectFolderButton, Dock.Left);
+			
+			var currentFolderLabel = new TextBlock
+			{
+				Text = "No folder selected",
+				VerticalAlignment = VerticalAlignment.Center,
+				FontStyle = FontStyles.Italic,
+				TextTrimming = TextTrimming.CharacterEllipsis
+			};
+			
+			topPanel.Children.Add(selectFolderButton);
+			topPanel.Children.Add(currentFolderLabel);
+			
+			// File list
+			var listBox = new ListBox
+			{
+				Margin = new Thickness(10, 0, 10, 10),
+				FontFamily = new FontFamily("Consolas")
+			};
+			
+			// Playback controls
+			var playbackPanel = new Grid
+			{
+				Margin = new Thickness(10)
+			};
+			playbackPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+			playbackPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+			playbackPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+			
+			var controlButtonsPanel = new StackPanel
+			{
+				Orientation = Orientation.Horizontal
+			};
+			
+			var playButton = new Button
+			{
+				Content = "▶ Play",
+				Width = 80,
+				Height = 35,
+				Margin = new Thickness(0, 0, 5, 0),
+				IsEnabled = false
+			};
+			
+			var stopButton = new Button
+			{
+				Content = "⏹ Stop",
+				Width = 80,
+				Height = 35,
+				Margin = new Thickness(0, 0, 5, 0),
+				IsEnabled = false
+			};
+			
+			var autoPlayCheckBox = new CheckBox
+			{
+				Content = "Auto-play next",
+				VerticalAlignment = VerticalAlignment.Center,
+				Margin = new Thickness(10, 0, 0, 0),
+				IsChecked = false
+			};
+			
+			controlButtonsPanel.Children.Add(playButton);
+			controlButtonsPanel.Children.Add(stopButton);
+			controlButtonsPanel.Children.Add(autoPlayCheckBox);
+			
+			Grid.SetColumn(controlButtonsPanel, 0);
+			playbackPanel.Children.Add(controlButtonsPanel);
+			
+			// Progress info
+			var progressPanel = new StackPanel
+			{
+				Margin = new Thickness(10, 0, 10, 0)
+			};
+			
+			var nowPlayingLabel = new TextBlock
+			{
+				Text = "No file playing",
+				FontWeight = FontWeights.Bold,
+				Margin = new Thickness(0, 0, 0, 5)
+			};
+			
+			var progressBar = new ProgressBar
+			{
+				Height = 8,
+				Margin = new Thickness(0, 0, 0, 5)
+			};
+			
+			var timeLabel = new TextBlock
+			{
+				Text = "00:00 / 00:00",
+				HorizontalAlignment = HorizontalAlignment.Center,
+				FontFamily = new FontFamily("Consolas"),
+				FontSize = 11
+			};
+			
+			progressPanel.Children.Add(nowPlayingLabel);
+			progressPanel.Children.Add(progressBar);
+			progressPanel.Children.Add(timeLabel);
+			
+			Grid.SetColumn(progressPanel, 1);
+			playbackPanel.Children.Add(progressPanel);
+			
+			// Volume control
+			var volumePanel = new StackPanel
+			{
+				Margin = new Thickness(10, 0, 0, 0)
+			};
+			
+			var volumeLabel = new TextBlock
+			{
+				Text = "Volume:",
+				FontSize = 11,
+				Margin = new Thickness(0, 0, 0, 2)
+			};
+			
+			var volumeSlider = new Slider
+			{
+				Width = 100,
+				Minimum = 0,
+				Maximum = 100,
+				Value = 100,
+				TickFrequency = 10,
+				IsSnapToTickEnabled = true
+			};
+			
+			var volumeValueLabel = new TextBlock
+			{
+				Text = "100%",
+				HorizontalAlignment = HorizontalAlignment.Center,
+				FontSize = 10
+			};
+			
+			volumeSlider.ValueChanged += (s, args) =>
+			{
+				volumeValueLabel.Text = $"{(int)volumeSlider.Value}%";
+			};
+			
+			volumePanel.Children.Add(volumeLabel);
+			volumePanel.Children.Add(volumeSlider);
+			volumePanel.Children.Add(volumeValueLabel);
+			
+			Grid.SetColumn(volumePanel, 2);
+			playbackPanel.Children.Add(volumePanel);
+			
+			// Bottom buttons
+			var bottomPanel = new StackPanel
+			{
+				Orientation = Orientation.Horizontal,
+				HorizontalAlignment = HorizontalAlignment.Right,
+				Margin = new Thickness(10)
+			};
+			
+			var loadToMainButton = new Button
+			{
+				Content = "Load Selected to Main Player",
+				Width = 180,
+				Height = 30,
+				Margin = new Thickness(5),
+				IsEnabled = false
+			};
+			
+			var closeButton = new Button
+			{
+				Content = "Close",
+				Width = 80,
+				Height = 30,
+				Margin = new Thickness(5)
+			};
+			
+			bottomPanel.Children.Add(loadToMainButton);
+			bottomPanel.Children.Add(closeButton);
+			
+			// Layout
+			Grid.SetRow(topPanel, 0);
+			Grid.SetRow(listBox, 1);
+			Grid.SetRow(playbackPanel, 2);
+			Grid.SetRow(bottomPanel, 3);
+			
+			mainGrid.Children.Add(topPanel);
+			mainGrid.Children.Add(listBox);
+			mainGrid.Children.Add(playbackPanel);
+			mainGrid.Children.Add(bottomPanel);
+			
+			browserWindow.Content = mainGrid;
+			
+			// Audio playback objects
+			WaveOutEvent browserWaveOut = null;
+			AudioFileReader browserAudioFile = null;
+			System.Windows.Threading.DispatcherTimer browserTimer = new System.Windows.Threading.DispatcherTimer();
+			browserTimer.Interval = TimeSpan.FromMilliseconds(100);
+			
+			browserTimer.Tick += (s, args) =>
+			{
+				if (browserAudioFile != null && browserWaveOut != null)
+				{
+					var currentTime = browserAudioFile.CurrentTime;
+					var totalTime = browserAudioFile.TotalTime;
+					
+					progressBar.Maximum = totalTime.TotalSeconds;
+					progressBar.Value = currentTime.TotalSeconds;
+					
+					timeLabel.Text = $"{currentTime:mm\\:ss} / {totalTime:mm\\:ss}";
+				}
+			};
+			
+			// Select folder functionality
+			selectFolderButton.Click += (s, args) =>
+			{
+				var folderDialog = new System.Windows.Forms.FolderBrowserDialog
+				{
+					Description = "Select folder containing audio files",
+					SelectedPath = lastOutputFolder
+				};
+				
+				if (folderDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+				{
+					string selectedFolder = folderDialog.SelectedPath;
+					currentFolderLabel.Text = selectedFolder;
+					
+					// Load audio files
+					listBox.Items.Clear();
+					
+					var audioFiles = Directory.GetFiles(selectedFolder, "*.wav")
+						.Concat(Directory.GetFiles(selectedFolder, "*.mp3"))
+						.OrderBy(f => f)
+						.ToList();
+					
+					foreach (var file in audioFiles)
+					{
+						listBox.Items.Add(new AudioFileItem
+						{
+							FullPath = file,
+							DisplayName = Path.GetFileName(file)
+						});
+					}
+					
+					if (audioFiles.Count > 0)
+					{
+						playButton.IsEnabled = true;
+						loadToMainButton.IsEnabled = true;
+					}
+				}
+			};
+			
+			// Play button functionality
+			playButton.Click += (s, args) =>
+			{
+				if (listBox.SelectedItem is AudioFileItem selectedItem)
+				{
+					try
+					{
+						// Stop current playback
+						if (browserWaveOut != null)
+						{
+							browserWaveOut.Stop();
+							browserWaveOut.Dispose();
+							browserWaveOut = null;
+						}
+						
+						if (browserAudioFile != null)
+						{
+							browserAudioFile.Dispose();
+							browserAudioFile = null;
+						}
+						
+						// Start new playback
+						browserAudioFile = new AudioFileReader(selectedItem.FullPath);
+						browserWaveOut = new WaveOutEvent();
+						browserWaveOut.Init(browserAudioFile);
+						browserWaveOut.Volume = (float)(volumeSlider.Value / 100.0);
+						
+						browserWaveOut.PlaybackStopped += (sender, e) =>
+						{
+							browserTimer.Stop();
+							
+							if (autoPlayCheckBox.IsChecked == true)
+							{
+								// Auto-play next file
+								int currentIndex = listBox.SelectedIndex;
+								if (currentIndex < listBox.Items.Count - 1)
+								{
+									listBox.SelectedIndex = currentIndex + 1;
+									playButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+								}
+								else
+								{
+									nowPlayingLabel.Text = "Playback complete";
+									progressBar.Value = 0;
+									timeLabel.Text = "00:00 / 00:00";
+								}
+							}
+							else
+							{
+								nowPlayingLabel.Text = "Playback stopped";
+								progressBar.Value = 0;
+								timeLabel.Text = "00:00 / 00:00";
+							}
+						};
+						
+						browserWaveOut.Play();
+						browserTimer.Start();
+						
+						nowPlayingLabel.Text = $"Playing: {selectedItem.DisplayName}";
+						stopButton.IsEnabled = true;
+					}
+					catch (Exception ex)
+					{
+						MessageBox.Show($"Error playing file:\n{ex.Message}", "Playback Error",
+							MessageBoxButton.OK, MessageBoxImage.Error);
+					}
+				}
+				else
+				{
+					MessageBox.Show("Please select a file to play.", "No Selection",
+						MessageBoxButton.OK, MessageBoxImage.Information);
+				}
+			};
+			
+			// Stop button functionality
+			stopButton.Click += (s, args) =>
+			{
+				if (browserWaveOut != null)
+				{
+					browserWaveOut.Stop();
+					browserWaveOut.Dispose();
+					browserWaveOut = null;
+				}
+				
+				if (browserAudioFile != null)
+				{
+					browserAudioFile.Dispose();
+					browserAudioFile = null;
+				}
+				
+				browserTimer.Stop();
+				nowPlayingLabel.Text = "Playback stopped";
+				progressBar.Value = 0;
+				timeLabel.Text = "00:00 / 00:00";
+				stopButton.IsEnabled = false;
+			};
+			
+			// Volume control
+			volumeSlider.ValueChanged += (s, args) =>
+			{
+				if (browserWaveOut != null)
+				{
+					browserWaveOut.Volume = (float)(volumeSlider.Value / 100.0);
+				}
+			};
+			
+			// Double-click to play
+			listBox.MouseDoubleClick += (s, args) =>
+			{
+				if (listBox.SelectedItem != null)
+				{
+					playButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+				}
+			};
+			
+			// Load to main player
+			loadToMainButton.Click += (s, args) =>
+			{
+				if (listBox.SelectedItems.Count > 0)
+				{
+					createdAudioFiles.Clear();
+					
+					foreach (AudioFileItem item in listBox.SelectedItems)
+					{
+						createdAudioFiles.Add(item.FullPath);
+					}
+					
+					UpdatePlaybackControls();
+					
+					MessageBox.Show($"Loaded {listBox.SelectedItems.Count} file(s) to main player.",
+						"Files Loaded", MessageBoxButton.OK, MessageBoxImage.Information);
+				}
+			};
+			
+			// Close button
+			closeButton.Click += (s, args) => browserWindow.Close();
+			
+			// Cleanup on close
+			browserWindow.Closing += (s, args) =>
+			{
+				browserTimer.Stop();
+				
+				if (browserWaveOut != null)
+				{
+					browserWaveOut.Stop();
+					browserWaveOut.Dispose();
+				}
+				
+				if (browserAudioFile != null)
+				{
+					browserAudioFile.Dispose();
+				}
+			};
+			
+			// Keyboard shortcuts
+			browserWindow.PreviewKeyDown += (s, args) =>
+			{
+				if (args.Key == Key.Space && playButton.IsEnabled)
+				{
+					playButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+					args.Handled = true;
+				}
+				else if (args.Key == Key.Escape)
+				{
+					stopButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+				}
+				else if (args.Key == Key.Up && listBox.SelectedIndex > 0)
+				{
+					listBox.SelectedIndex--;
+				}
+				else if (args.Key == Key.Down && listBox.SelectedIndex < listBox.Items.Count - 1)
+				{
+					listBox.SelectedIndex++;
+				}
+			};
+			
+			browserWindow.ShowDialog();
+		}
+
+		// Helper class for audio file items
+		private class AudioFileItem
+		{
+			public string FullPath { get; set; }
+			public string DisplayName { get; set; }
+			
+			public override string ToString()
+			{
+				return DisplayName;
+			}
+		}		
+
         private void PlayAudioFile(int index)
         {
             if (index < 0 || index >= createdAudioFiles.Count) return;
@@ -3477,7 +3941,7 @@ private List<TextSegment> ProcessTextSegments(string text)
 			public int SubIndex { get; set; } = 0;
 			public int? LabelNumber { get; set; } = null; // Custom output number
         }
-        
+		
         private class SSMLValidationResult
         {
             public List<SSMLError> Errors { get; set; } = new List<SSMLError>();

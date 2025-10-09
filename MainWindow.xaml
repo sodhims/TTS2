@@ -55,6 +55,22 @@
                     </MenuItem.Icon>
                 </MenuItem>
             </MenuItem>
+			<!-- Add to Menu Bar -->
+			<MenuItem Header="Tools">
+				<MenuItem Header="Audio File Browser..." Click="AudioBrowser_Click">
+					<MenuItem.Icon>
+						<TextBlock Text="🎵"/>
+					</MenuItem.Icon>
+				</MenuItem>
+			</MenuItem>
+
+			<!-- OR Add to Toolbar -->
+			<Button Name="btnAudioBrowser" Click="AudioBrowser_Click" Padding="10,5">
+				<StackPanel Orientation="Horizontal">
+					<TextBlock Text="🎵" Margin="0,0,5,0"/>
+					<TextBlock Text="Audio Browser"/>
+				</StackPanel>
+			</Button>
         </Menu>
         
         <!-- Toolbar -->
@@ -117,16 +133,17 @@
                         <Button Name="btnInsertSplit" Click="InsertSplit_Click" ToolTip="Insert split tags">
                             <TextBlock Text="&lt;split&gt;"/>
                         </Button>
-                        <ComboBox Name="cmbVoiceTag" Width="120">
-                            <ComboBoxItem>voice=1</ComboBoxItem>
-                            <ComboBoxItem>voice=2</ComboBoxItem>
-                            <ComboBoxItem>voice=3</ComboBoxItem>
-                            <ComboBoxItem>voice=4</ComboBoxItem>
-                            <ComboBoxItem>service=1</ComboBoxItem>
-                            <ComboBoxItem>service=2</ComboBoxItem>
-                            <ComboBoxItem>service=3</ComboBoxItem>
-                            <ComboBoxItem>service=4</ComboBoxItem>
-                        </ComboBox>
+						<ComboBox Name="cmbVoiceTag" Width="120">
+							<ComboBoxItem>voice=1</ComboBoxItem>
+							<ComboBoxItem>voice=2</ComboBoxItem>
+							<ComboBoxItem>voice=3</ComboBoxItem>
+							<ComboBoxItem>voice=4</ComboBoxItem>
+							<ComboBoxItem>service=1</ComboBoxItem>
+							<ComboBoxItem>service=2</ComboBoxItem>
+							<ComboBoxItem>service=3</ComboBoxItem>
+							<ComboBoxItem>service=4</ComboBoxItem>
+							<ComboBoxItem>label=1</ComboBoxItem>  <!-- ADD -->
+						</ComboBox>
                         <Button Name="btnInsertVoice" Click="InsertVoice_Click" ToolTip="Insert voice tag">
                             <TextBlock Text="Insert Voice"/>
                         </Button>
